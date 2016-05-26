@@ -1,0 +1,206 @@
+#!/usr/bin/perl
+
+# check_lg-ripestat - monitoring AS announcement visibility using looking glass API of RIPEstat
+#
+# Authors:
+#   Thomas Liske <liske@ibh.de>
+#
+# Copyright Holder:
+#   2016 (C) IBH IT-Service GmbH [http://www.ibh.de/]
+#
+# License:
+#   This program is free software; you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation; either version 2 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this package; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+#
+
+use Nagios::Plugin;
+use HTTP::Request::Common;
+use LWP::UserAgent;
+use JSON;
+use URI;
+
+use strict;
+use warnings;
+
+my $uri = URI->new(q(https://stat.ripe.net/data/looking-glass/data.json));
+
+my $version = '0.1';
+
+my $np = Nagios::Plugin->new(
+    usage => 'Usage: %s (--prefix=<prefix>) (--asn=<aut-num>,...) (--peerings=<aut-num>,...) [-c|--criticals=<threshold>] [-w|--warnings=<threshold>]',
+    timeout => 15,
+    shortname => 'RIPEstat',
+    version => $version,
+
+    url => 'https://github.com/DE-IBH/check_lg-ripestat',
+    license => <<LICENSE,
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+LICENSE
+    blurb => <<COPYRIGHT,
+Authors:
+  Thomas Liske <liske\@ibh.de>
+
+Copyright Holder:
+  2016 (C) IBH IT-Service GmbH [http://www.ibh.de/]
+COPYRIGHT
+);
+
+$np->add_arg(
+    spec => 'prefix=s',
+    help => "--prefix=PREFIX\n   IP prefix to query",
+    required => 1,
+    );
+
+$np->add_arg(
+    spec => 'peerings=s',
+    help => "--peerings=ASN[,ASN]*\n   Allowed peering ASNs",
+    required => 1,
+    );
+
+$np->add_arg(
+    spec => 'asn=s',
+    help => "--asn=INTEGER[,INTEGER]*\n   Origin AS number(s) to check",
+    required => 1,
+    );
+
+$np->add_arg(
+    spec => 'warnings|w=s',
+    help => "-w, --warnings=INTEGER:INTEGER,INTEGER:INTEGER\n   Path count warning thresholds foreach peer",
+    );
+
+$np->add_arg(
+    spec => 'criticals|c=s',
+    help => "-c, --criticals=INTEGER:INTEGER,INTEGER:INTEGER\n   Path count critical thresholds foreach peer"
+    );
+    
+$np->add_arg(
+    spec => 'ignoressl',
+    help => "--ignoressl\n   Ignore bad ssl certificates",
+);
+
+$np->getopts;
+
+$np->shortname( qq(RIPEstat @{[ $np->opts->prefix ]}) );
+
+my $ua = LWP::UserAgent->new;
+$ua->env_proxy;
+$ua->agent("check_lg-ripestat/$version");
+$ua->default_header('Accept' => 'application/json');
+$ua->protocols_allowed( [ qw(https) ] );
+$ua->parse_head(0);
+$ua->timeout($np->opts->timeout);
+
+if ($np->opts->ignoressl) {
+    $ua->ssl_opts(verify_hostname => 0, SSL_verify_mode => 0x00);
+}
+
+$uri->query_form(resource => $np->opts->prefix);
+my $response = $ua->request(GET $uri->canonical);
+
+if ($response->is_success) {
+    if (!($response->header("content-type") =~ 'application/json')) {
+        $np->nagios_exit(UNKNOWN, 'Content type is not JSON: '.$response->header("content-type"));
+    }
+} else {
+    $np->nagios_exit(CRITICAL, 'Connection failed: '.$response->status_line);
+}
+
+my $json = decode_json($response->content);
+if($json->{status} ne q(ok)) {
+    $np->nagios_exit(UNKNOWN, "API returned status $json->{status}");
+};
+
+my $status = OK;
+my @warnings = split(/,/, ($np->opts->warnings ? $np->opts->warnings : ''));
+my @criticals = split(/,/, ($np->opts->criticals ? $np->opts->criticals : ''));
+my %peers;
+my %pindex;
+my $i = 0;
+my %allpeers = map {
+    $pindex{$_} = $i++;
+    $_ => 0;
+} split(/,/, $np->opts->peerings);
+my %uknpeers;
+my @msg;
+my $asn = $np->opts->asn;
+my %fishy;
+foreach my $rrc (keys %{ $json->{data}->{rrcs} }) {
+    my $line = (
+	$np->opts->verbose ? 
+	qq($rrc - $json->{data}->{rrcs}->{$rrc}->{location}:)
+	:
+	qq($rrc:)
+	);
+
+    foreach my $entries (@{ $json->{data}->{rrcs}->{$rrc}->{entries} }) {
+	unless($entries->{as_path} =~ /(\d+) $asn$/) {
+	    $entries->{as_path} =~ / (\d+)$/;
+	    $fishy{$1}->{$rrc}++ 
+	}
+	else {
+	    $peers{$1}++;
+	    $uknpeers{$1}->{$rrc}++ unless(exists($allpeers{$1}));
+	}
+    }
+}
+
+if(%fishy) {
+    foreach my $asn (sort keys %fishy) {
+	$np->add_message(CRITICAL, "fishy announcement from AS$asn at ".join(', ', sort { $a cmp $b; } keys %{ $fishy{$asn} }));
+    }
+}
+
+if(%uknpeers) {
+    foreach my $peer (sort keys %uknpeers) {
+	$np->add_message(CRITICAL, "fishy peering with AS$peer at ".join(', ', sort { $a cmp $b; } keys %{ $uknpeers{$peer} }));
+    }
+}
+
+foreach my $asn (sort keys %allpeers) {
+    next unless(exists($pindex{$asn}));
+
+    my $i = $pindex{$asn};
+    if($warnings[$i] || $criticals[$i]) {
+	my $code = $np->check_threshold(
+	    check => $peers{$asn} || 0,
+	    warning => $warnings[$i],
+	    critical => $criticals[$i],
+	    ) ;
+	my $msg = "fishy path count for AS$asn";
+
+	$np->add_message($code || OK, $msg);
+    }
+}
+
+$np->add_message(OK,
+		 join(', ', map {
+		     # record perfdata
+		     $np->add_perfdata(
+			 label => "AS$_",
+			 value => $peers{$_} || 0,
+			 min => 0,
+			 warning => $warnings[ $pindex{$_} ] || '',
+			 critical => $criticals[ $pindex{$_} ] || '',
+			 );
+
+		     qq(@{[ $peers{$_} || 0 ]} via AS$_);
+								    } sort keys %allpeers
+		 )
+    );
+
+my ($code, $msg) = $np->check_messages(join => '; ');
+$np->nagios_exit($code, $msg);
