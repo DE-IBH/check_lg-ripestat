@@ -180,9 +180,9 @@ foreach my $asn (sort keys %allpeers) {
 	    warning => $warnings[$i],
 	    critical => $criticals[$i],
 	    ) ;
-	my $msg = "fishy path count for AS$asn";
+	my $msg = "path count AS$asn=".($peers{$asn} || 0);
 
-	$np->add_message($code || OK, $msg);
+	$np->add_message($code, $msg) if($code != OK);
     }
 }
 
