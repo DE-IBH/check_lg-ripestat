@@ -26,21 +26,21 @@ To install those modules on *Debian GNU/Linux*:
 
 ```console
 # apt-get install libnagios-plugin-perl libwww-perl libjson-perl liburi-perl
-´´´
+```
 
 Usage
 -----
 
 You need to define a command for *check_lg-ripestat*:
 
-´´´
+```
 define command {
   command_name    check_lg-ripestat
   /usr/local/lib/nagios/plugins/check_lg-ripestat --extra-opts=$ARG1$ --prefix=$ARG2$
 }
 ```
 
-´´´ini
+```ini
 [AS15372]
 asn=15372
 peerings=3320,13237,20676
@@ -56,7 +56,7 @@ the *--extra-opts* parameter[3].
 For each prefix announcement to be monitored you need to define an approperiate
 service:
 
-´´´
+```
 define service {
   host_name                     BGP-LookingGlass
   service_description           AS15372 IBH 212.111.224.0/19
