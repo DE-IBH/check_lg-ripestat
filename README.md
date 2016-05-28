@@ -69,8 +69,7 @@ define service {
 }
 ```
 
-WATO
-====
+### WATO
 
 In *Check_MK* the plugin can be used as a *Classical active and passive
 Monitoring check*:
