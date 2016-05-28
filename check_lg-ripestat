@@ -38,7 +38,7 @@ my $uri = URI->new(q(https://stat.ripe.net/data/looking-glass/data.json));
 my $version = '0.1';
 
 my $np = Nagios::Plugin->new(
-    usage => 'Usage: %s (--prefix=<prefix>) (--asn=<aut-num>,...) (--peerings=<aut-num>,...) [-c|--criticals=<threshold>] [-w|--warnings=<threshold>]',
+    usage => 'Usage: %s (--prefix=<prefix>) (--asn=<aut-num>,...) (--peerings=<aut-num>,...) [-c|--criticals=<threshold>] [-w|--warnings=<threshold>] ...',
     timeout => 15,
     shortname => 'RIPEstat',
     version => $version,
@@ -86,7 +86,17 @@ $np->add_arg(
     spec => 'criticals|c=s',
     help => "-c, --criticals=INTEGER:INTEGER,INTEGER:INTEGER\n   Path count critical thresholds foreach peer"
     );
-    
+
+$np->add_arg(
+    spec => 'pw=s',
+    help => "--pw=INTEGER:INTEGER\n   Path count warning thresholds over all peers",
+    );
+
+$np->add_arg(
+    spec => 'pc=s',
+    help => "--pc=INTEGER:INTEGER\n   Path count critical thresholds over all peers",
+    );
+
 $np->add_arg(
     spec => 'ignoressl',
     help => "--ignoressl\n   Ignore bad ssl certificates",
@@ -170,7 +180,12 @@ if(%uknpeers) {
     }
 }
 
+my $paths = 0;
 foreach my $asn (sort keys %allpeers) {
+    # count total path count
+    $paths += $peers{$asn} || 0;
+
+    # check thresholds
     next unless(exists($pindex{$asn}));
 
     my $i = $pindex{$asn};
@@ -184,6 +199,24 @@ foreach my $asn (sort keys %allpeers) {
 
 	$np->add_message($code, $msg) if($code != OK);
     }
+}
+
+$np->add_perfdata(
+	label => "paths",
+	value => $paths,
+	min => 0,
+	warning => $np->opts->pw || '',
+	critical => $np->opts->pc || '',
+);
+
+if($np->opts->pw || $np->opts->pc) {
+    my $code = $np->check_threshold(
+	check => $paths || 0,
+	warning => $np->opts->pw,
+	critical => $np->opts->pc,
+	) ;
+
+    $np->add_message($code, "total path count of $paths") if($code != OK);
 }
 
 $np->add_message(OK,
