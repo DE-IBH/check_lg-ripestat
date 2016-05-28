@@ -33,7 +33,7 @@ Usage
 
 You need to define a command for *check_lg-ripestat*:
 
-`command.cfg`
+**command.cfg**
 ```
 define command {
   command_name    check_lg-ripestat
@@ -41,25 +41,25 @@ define command {
 }
 ```
 
-`plugins.ini`
+**plugins.ini**
 ```ini
 [AS15372]
 asn=15372
 peerings=3320,13237,20676
-pw=100
-pc=80
+pw=100:
+pc=80:
 ```
 
 The options can be provided as parameters or within a configuration file using
 the *--extra-opts* parameter[3].
 
 - [3] http://nagios-plugins.org/doc/extra-opts.html
-
+gi
 
 For each prefix announcement to be monitored you need to define an approperiate
 service:
 
-`services.cfg`
+**services.cfg**
 ```
 define service {
   host_name                     BGP-LookingGlass
@@ -68,3 +68,13 @@ define service {
   check_interval                60.0
 }
 ```
+
+WATO
+====
+
+In *Check_MK* the plugin can be used as a *Classical active and passive
+Monitoring check*:
+
+![WATO][screenshot]
+
+[screenshot]: wato.jpg
