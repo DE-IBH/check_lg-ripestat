@@ -8,8 +8,8 @@ This nagios plugin monitors the announcements, AS path counts and AS peerings
 using RIPEstat[1]. RIPEstat provides an JSON API to access informations about
 Autonomous System (AS) including the Routing Information Service (RIS)[2].
 
-[1] https://stat.ripe.net/index/about-ripestat
-[2] https://www.ripe.net/analyse/internet-measurements/routing-information-service-ris/routing-information-service-ris
+- [1] https://stat.ripe.net/index/about-ripestat
+- [2] https://www.ripe.net/analyse/internet-measurements/routing-information-service-ris/routing-information-service-ris
 
 
 Install
@@ -33,6 +33,7 @@ Usage
 
 You need to define a command for *check_lg-ripestat*:
 
+`command.cfg`
 ```
 define command {
   command_name    check_lg-ripestat
@@ -40,6 +41,7 @@ define command {
 }
 ```
 
+`plugins.ini`
 ```ini
 [AS15372]
 asn=15372
@@ -51,11 +53,13 @@ pc=80
 The options can be provided as parameters or within a configuration file using
 the *--extra-opts* parameter[3].
 
-[3] http://nagios-plugins.org/doc/extra-opts.html
+- [3] http://nagios-plugins.org/doc/extra-opts.html
+
 
 For each prefix announcement to be monitored you need to define an approperiate
 service:
 
+`services.cfg`
 ```
 define service {
   host_name                     BGP-LookingGlass
