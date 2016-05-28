@@ -38,7 +38,7 @@ my $uri = URI->new(q(https://stat.ripe.net/data/looking-glass/data.json));
 my $version = '0.2';
 
 my $np = Nagios::Plugin->new(
-    usage => 'Usage: %s (--prefix=<prefix>) (--asn=<aut-num>,...) (--peerings=<aut-num>,...) [-c|--criticals=<threshold>] [-w|--warnings=<threshold>] ...',
+    usage => 'Usage: %s (--asn=<aut-num>) (--prefix=<prefix>) (--peerings=<aut-num>,...) [-c|--criticals=<threshold>] [-w|--warnings=<threshold>] ...',
     timeout => 15,
     shortname => 'RIPEstat',
     version => $version,
@@ -61,7 +61,7 @@ COPYRIGHT
 
 $np->add_arg(
     spec => 'asn=s',
-    help => "--asn=INTEGER[,INTEGER]*\n   Origin AS number(s) to check",
+    help => "--asn=INTEGER\n   Origin AS number to check",
     required => 1,
     );
 
