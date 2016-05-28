@@ -31,6 +31,44 @@ To install those modules on *Debian GNU/Linux*:
 Usage
 -----
 
+```console
+check_lg-ripestat (--asn=<aut-num>,...) (--prefix=<prefix>) (--peerings=<aut-num>,...) [-c|--criticals=<threshold>] [-w|--warnings=<threshold>] ...
+
+ -?, --usage
+   Print usage information
+ -h, --help
+   Print detailed help screen
+ -V, --version
+   Print version information
+ --extra-opts=[section][@file]
+   Read options from an ini file. See http://nagiosplugins.org/extra-opts
+   for usage and examples.
+ --asn=INTEGER[,INTEGER]*
+   Origin AS number(s) to check
+ --prefix=PREFIX
+   IP prefix to query
+ --peerings=ASN[,ASN]*
+   Allowed peering ASNs
+ -w, --warnings=INTEGER:INTEGER[,INTEGER:INTEGER]*
+   Path count warning thresholds for each peer
+ -c, --criticals=INTEGER:INTEGER[,INTEGER:INTEGER]*
+   Path count critical thresholds for each peer
+ --pw=INTEGER:INTEGER
+   Path count warning thresholds over all peers
+ --pc=INTEGER:INTEGER
+   Path count critical thresholds over all peers
+ --ignoressl
+   Ignore bad ssl certificates
+ -t, --timeout=INTEGER
+   Seconds before plugin times out (default: 15)
+ -v, --verbose
+   Show details for command-line debugging (can repeat up to 3 times)
+```
+
+
+Nagios
+------
+
 You need to define a command for *check_lg-ripestat*:
 
 **command.cfg**
