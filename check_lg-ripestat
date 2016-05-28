@@ -35,7 +35,7 @@ use warnings;
 
 my $uri = URI->new(q(https://stat.ripe.net/data/looking-glass/data.json));
 
-my $version = '0.1';
+my $version = '0.2';
 
 my $np = Nagios::Plugin->new(
     usage => 'Usage: %s (--prefix=<prefix>) (--asn=<aut-num>,...) (--peerings=<aut-num>,...) [-c|--criticals=<threshold>] [-w|--warnings=<threshold>] ...',
