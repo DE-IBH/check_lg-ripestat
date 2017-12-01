@@ -157,8 +157,8 @@ foreach my $rrc (keys %{ $json->{data}->{rrcs} }) {
 	);
 
     foreach my $entries (@{ $json->{data}->{rrcs}->{$rrc}->{entries} }) {
-	unless($entries->{as_path} =~ /(\d+) $asn$/) {
-	    $entries->{as_path} =~ / (\d+)$/;
+	unless($entries->{as_path} =~ /(\d+)( $asn)+$/) {
+	    $entries->{as_path} =~ / (\d+)( $asn$)*$/;
 	    $fishy{$1}->{$rrc}++ 
 	}
 	else {
