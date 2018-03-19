@@ -24,7 +24,7 @@
 #   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 #
 
-use Nagios::Plugin;
+use Monitoring::Plugin;
 use HTTP::Request::Common;
 use LWP::UserAgent;
 use JSON;
@@ -37,7 +37,7 @@ my $uri = URI->new(q(https://stat.ripe.net/data/looking-glass/data.json));
 
 my $version = '0.2';
 
-my $np = Nagios::Plugin->new(
+my $np = Monitoring::Plugin->new(
     usage => 'Usage: %s (--asn=<aut-num>) (--prefix=<prefix>) (--peerings=<aut-num>,...) [-c|--criticals=<threshold>] [-w|--warnings=<threshold>] ...',
     timeout => 15,
     shortname => 'RIPEstat',
@@ -118,7 +118,11 @@ if ($np->opts->ignoressl) {
     $ua->ssl_opts(verify_hostname => 0, SSL_verify_mode => 0x00);
 }
 
-$uri->query_form(resource => $np->opts->prefix);
+$uri->query_form(
+    resource => $np->opts->prefix,
+    preferred_version => "2.0",
+    sourceapp => "check_lg-ripestat/$version",
+    );
 my $response = $ua->request(GET $uri->canonical);
 
 if ($response->is_success) {
@@ -148,15 +152,16 @@ my %uknpeers;
 my @msg;
 my $asn = $np->opts->asn;
 my %fishy;
-foreach my $rrc (keys %{ $json->{data}->{rrcs} }) {
+
+foreach my $rrc (0 .. scalar @{$json->{data}->{rrcs}} - 1 ) {
     my $line = (
 	$np->opts->verbose ? 
-	qq($rrc - $json->{data}->{rrcs}->{$rrc}->{location}:)
+	qq($json->{data}->{rrcs}->[$rrc]->{rrc} - $json->{data}->{rrcs}->[$rrc]->{location}:)
 	:
 	qq($rrc:)
 	);
-
-    foreach my $entries (@{ $json->{data}->{rrcs}->{$rrc}->{entries} }) {
+    print "$rrc: $line\n" if $np->opts->verbose;
+    foreach my $entries (@{ $json->{data}->{rrcs}->[$rrc]->{peers} }) {
 	unless($entries->{as_path} =~ /(\d+)( $asn)+$/) {
 	    $entries->{as_path} =~ / (\d+)( $asn$)*$/;
 	    $fishy{$1}->{$rrc}++ 
