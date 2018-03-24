@@ -154,22 +154,19 @@ my $asn = $np->opts->asn;
 my %fishy;
 
 foreach my $rrc (0 .. scalar @{$json->{data}->{rrcs}} - 1 ) {
-    my $line = (
-	$np->opts->verbose ? 
-	qq($json->{data}->{rrcs}->[$rrc]->{rrc} - $json->{data}->{rrcs}->[$rrc]->{location}:)
-	:
-	qq($rrc:)
-	);
-    print "$rrc: $line\n" if $np->opts->verbose;
+    print qq($json->{data}->{rrcs}->[$rrc]->{rrc} - $json->{data}->{rrcs}->[$rrc]->{location}\n)
+        if($np->opts->verbose);
+
+    my $rcc_name = $json->{data}->{rrcs}->[$rrc]->{rrc};
     foreach my $entries (@{ $json->{data}->{rrcs}->[$rrc]->{peers} }) {
-	unless($entries->{as_path} =~ /(\d+)( $asn)+$/) {
-	    $entries->{as_path} =~ / (\d+)( $asn$)*$/;
-	    $fishy{$1}->{$rrc}++ 
-	}
-	else {
-	    $peers{$1}++;
-	    $uknpeers{$1}->{$rrc}++ unless(exists($allpeers{$1}));
-	}
+        unless($entries->{as_path} =~ /(\d+)( $asn)+$/) {
+            $entries->{as_path} =~ / (\d+)( $asn$)*$/;
+            $fishy{$1}->{$rcc_name}++;
+        }
+        else {
+            $peers{$1}++;
+            $uknpeers{$1}->{$rcc_name}++ unless(exists($allpeers{$1}));
+        }
     }
 }
 
