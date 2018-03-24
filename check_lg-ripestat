@@ -6,7 +6,7 @@
 #   Thomas Liske <liske@ibh.de>
 #
 # Copyright Holder:
-#   2016 (C) IBH IT-Service GmbH [http://www.ibh.de/]
+#   2016 - 2018 (C) IBH IT-Service GmbH [http://www.ibh.de/]
 #
 # License:
 #   This program is free software; you can redistribute it and/or modify
@@ -35,7 +35,7 @@ use warnings;
 
 my $uri = URI->new(q(https://stat.ripe.net/data/looking-glass/data.json));
 
-my $version = '0.2';
+my $version = '0.3';
 
 my $np = Monitoring::Plugin->new(
     usage => 'Usage: %s (--asn=<aut-num>) (--prefix=<prefix>) (--peerings=<aut-num>,...) [-c|--criticals=<threshold>] [-w|--warnings=<threshold>] ...',
@@ -154,34 +154,31 @@ my $asn = $np->opts->asn;
 my %fishy;
 
 foreach my $rrc (0 .. scalar @{$json->{data}->{rrcs}} - 1 ) {
-    my $line = (
-	$np->opts->verbose ? 
-	qq($json->{data}->{rrcs}->[$rrc]->{rrc} - $json->{data}->{rrcs}->[$rrc]->{location}:)
-	:
-	qq($rrc:)
-	);
-    print "$rrc: $line\n" if $np->opts->verbose;
+    print qq($json->{data}->{rrcs}->[$rrc]->{rrc} - $json->{data}->{rrcs}->[$rrc]->{location}\n)
+        if($np->opts->verbose);
+
+    my $rcc_name = $json->{data}->{rrcs}->[$rrc]->{rrc};
     foreach my $entries (@{ $json->{data}->{rrcs}->[$rrc]->{peers} }) {
-	unless($entries->{as_path} =~ /(\d+)( $asn)+$/) {
-	    $entries->{as_path} =~ / (\d+)( $asn$)*$/;
-	    $fishy{$1}->{$rrc}++ 
-	}
-	else {
-	    $peers{$1}++;
-	    $uknpeers{$1}->{$rrc}++ unless(exists($allpeers{$1}));
-	}
+        unless($entries->{as_path} =~ /(\d+)( $asn)+$/) {
+            $entries->{as_path} =~ / (\d+)( $asn$)*$/;
+            $fishy{$1}->{$rcc_name}++;
+        }
+        else {
+            $peers{$1}++;
+            $uknpeers{$1}->{$rcc_name}++ unless(exists($allpeers{$1}));
+        }
     }
 }
 
 if(%fishy) {
     foreach my $asn (sort keys %fishy) {
-	$np->add_message(CRITICAL, "fishy announcement from AS$asn at ".join(', ', sort { $a cmp $b; } keys %{ $fishy{$asn} }));
+	   $np->add_message(CRITICAL, "fishy announcement from AS$asn at ".join(', ', sort { $a cmp $b; } keys %{ $fishy{$asn} }));
     }
 }
 
 if(%uknpeers) {
     foreach my $peer (sort keys %uknpeers) {
-	$np->add_message(CRITICAL, "fishy peering with AS$peer at ".join(', ', sort { $a cmp $b; } keys %{ $uknpeers{$peer} }));
+	   $np->add_message(CRITICAL, "fishy peering with AS$peer at ".join(', ', sort { $a cmp $b; } keys %{ $uknpeers{$peer} }));
     }
 }
 
@@ -195,14 +192,14 @@ foreach my $asn (sort keys %allpeers) {
 
     my $i = $pindex{$asn};
     if($warnings[$i] || $criticals[$i]) {
-	my $code = $np->check_threshold(
-	    check => $peers{$asn} || 0,
-	    warning => $warnings[$i],
-	    critical => $criticals[$i],
-	    ) ;
-	my $msg = "path count AS$asn=".($peers{$asn} || 0);
+        my $code = $np->check_threshold(
+            check => $peers{$asn} || 0,
+            warning => $warnings[$i],
+            critical => $criticals[$i],
+            ) ;
+        my $msg = "path count AS$asn=".($peers{$asn} || 0);
 
-	$np->add_message($code, $msg) if($code != OK);
+        $np->add_message($code, $msg) if($code != OK);
     }
 }
 
@@ -216,9 +213,9 @@ $np->add_perfdata(
 
 if($np->opts->pw || $np->opts->pc) {
     my $code = $np->check_threshold(
-	check => $paths || 0,
-	warning => $np->opts->pw,
-	critical => $np->opts->pc,
+        check => $paths || 0,
+        warning => $np->opts->pw,
+        critical => $np->opts->pc,
 	) ;
 
     $np->add_message($code, "total path count of $paths") if($code != OK);
