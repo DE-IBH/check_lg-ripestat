@@ -172,13 +172,13 @@ foreach my $rrc (0 .. scalar @{$json->{data}->{rrcs}} - 1 ) {
 
 if(%fishy) {
     foreach my $asn (sort keys %fishy) {
-	$np->add_message(CRITICAL, "fishy announcement from AS$asn at ".join(', ', sort { $a cmp $b; } keys %{ $fishy{$asn} }));
+	   $np->add_message(CRITICAL, "fishy announcement from AS$asn at ".join(', ', sort { $a cmp $b; } keys %{ $fishy{$asn} }));
     }
 }
 
 if(%uknpeers) {
     foreach my $peer (sort keys %uknpeers) {
-	$np->add_message(CRITICAL, "fishy peering with AS$peer at ".join(', ', sort { $a cmp $b; } keys %{ $uknpeers{$peer} }));
+	   $np->add_message(CRITICAL, "fishy peering with AS$peer at ".join(', ', sort { $a cmp $b; } keys %{ $uknpeers{$peer} }));
     }
 }
 
@@ -192,14 +192,14 @@ foreach my $asn (sort keys %allpeers) {
 
     my $i = $pindex{$asn};
     if($warnings[$i] || $criticals[$i]) {
-	my $code = $np->check_threshold(
-	    check => $peers{$asn} || 0,
-	    warning => $warnings[$i],
-	    critical => $criticals[$i],
-	    ) ;
-	my $msg = "path count AS$asn=".($peers{$asn} || 0);
+        my $code = $np->check_threshold(
+            check => $peers{$asn} || 0,
+            warning => $warnings[$i],
+            critical => $criticals[$i],
+            ) ;
+        my $msg = "path count AS$asn=".($peers{$asn} || 0);
 
-	$np->add_message($code, $msg) if($code != OK);
+        $np->add_message($code, $msg) if($code != OK);
     }
 }
 
@@ -213,9 +213,9 @@ $np->add_perfdata(
 
 if($np->opts->pw || $np->opts->pc) {
     my $code = $np->check_threshold(
-	check => $paths || 0,
-	warning => $np->opts->pw,
-	critical => $np->opts->pc,
+        check => $paths || 0,
+        warning => $np->opts->pw,
+        critical => $np->opts->pc,
 	) ;
 
     $np->add_message($code, "total path count of $paths") if($code != OK);
