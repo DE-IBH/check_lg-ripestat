@@ -5,18 +5,15 @@ About
 -----
 
 This nagios plugin monitors the announcements, AS path counts and AS peerings
-using RIPEstat[1]. RIPEstat provides an JSON API to access informations about
-Autonomous System (AS) including the Routing Information Service (RIS)[2].
-
-- [1] https://stat.ripe.net/index/about-ripestat
-- [2] https://www.ripe.net/analyse/internet-measurements/routing-information-service-ris/routing-information-service-ris
+using [RIPEstat](https://stat.ripe.net/index/about-ripestat). RIPEstat provides an JSON API to access informations about
+Autonomous System (AS) including the [Routing Information Service](https://www.ripe.net/analyse/internet-measurements/routing-information-service-ris/routing-information-service-ris) (RIS).
 
 
 Install
 -------
 
 *check_lg-ripestat* is implemented in *Perl* and depends on the following *Perl* modules:
-- Nagios::Plugin
+- Monitoring::Plugin
 - HTTP::Request::Common
 - LWP::UserAgent
 - JSON
@@ -25,7 +22,7 @@ Install
 To install those modules on *Debian GNU/Linux*:
 
 ```console
-# apt-get install libnagios-plugin-perl libwww-perl libjson-perl liburi-perl
+# apt-get install libmonitoring-plugin-perl libwww-perl libjson-perl liburi-perl
 ```
 
 Usage
@@ -89,10 +86,7 @@ pc=80:
 ```
 
 The options can be provided as parameters or within a configuration file using
-the *--extra-opts* parameter[3].
-
-- [3] http://nagios-plugins.org/doc/extra-opts.html
-gi
+the [*--extra-opts* parameter](http://nagios-plugins.org/doc/extra-opts.html).
 
 For each prefix announcement to be monitored you need to define an approperiate
 service:
