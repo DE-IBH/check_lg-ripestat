@@ -1,3 +1,11 @@
+check_lg-ripestat (0.3) unstable; urgency=low
+
+  * Change to RIPEStat looking-glass API v2.0
+    (github pr #3 by Steffen Weinreich @lairsdragon)
+  * Minor updates and fixes.
+
+ -- Thomas Liske <liske@ibh.de>  Sat, 24 Mar 2018 17:15:54 +0100
+
 check_lg-ripestat (0.2) unstable; urgency=low
 
   * Initial release.
